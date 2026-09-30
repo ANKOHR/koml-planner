@@ -1,0 +1,37 @@
+name: writing
+keywords:
+- write
+- draft
+- edit
+- article
+- essay
+- publish
+priority: 4
+packages:
+- key: brief
+  title: Define audience and purpose for {goal}
+  depends_on: []
+  estimate_hours: 0.5
+  acceptance:
+  - Audience, intended outcome and required length are recorded.
+- key: outline
+  title: Outline the argument for {goal}
+  depends_on:
+  - brief
+  estimate_hours: 0.5
+  acceptance:
+  - An outline contains the main claim and supporting points.
+- key: draft
+  title: Produce a complete draft for {goal}
+  depends_on:
+  - outline
+  estimate_hours: 2
+  acceptance:
+  - The draft covers every outline point with evidence where needed.
+- key: revise
+  title: Revise and proofread {goal}
+  depends_on:
+  - draft
+  estimate_hours: 1
+  acceptance:
+  - The final text meets the brief and has been checked for clarity and errors.

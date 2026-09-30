@@ -1,0 +1,23 @@
+"""Synthetic goal sentences, not measured real-world trial results."""
+SYNTHETIC_GOALS = [
+    ("outreach to 10 AI consultancies", "outreach"),
+    ("Contact a warm lead", "outreach"),
+    ("Pitch a scoped paid trial", "outreach"),
+    ("Email prospects about my offer", "outreach"),
+    ("Build a command line tool", "build"),
+    ("Ship a scoped paid trial for a warm lead", "outreach"),
+    ("Implement a dashboard", "build"),
+    ("Code a local prototype", "build"),
+    ("Research the market for planners", "research"),
+    ("Investigate customer needs", "research"),
+    ("Compare three storage approaches", "research"),
+    ("Study dependency graphs", "research"),
+    ("Write an essay about planning", "writing"),
+    ("Draft a project proposal", "writing"),
+    ("Edit my article", "writing"),
+    ("Publish a short guide", "writing"),
+    ("Organise weekly operations", "ops"),
+    ("Maintain the backup routine", "ops"),
+    ("Schedule the monthly review", "ops"),
+    ("Make progress on something important", "generic"),
+]

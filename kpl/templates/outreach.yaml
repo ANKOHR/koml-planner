@@ -1,0 +1,45 @@
+name: outreach
+keywords:
+- outreach
+- contact
+- lead
+- pitch
+- email
+- prospects
+priority: 1
+packages:
+- key: scope
+  title: Define the outreach offer for {goal}
+  depends_on: []
+  estimate_hours: 0.5
+  acceptance:
+  - A written offer identifies the recipient, value and requested next step.
+- key: targets
+  title: Qualify recipients for {goal}
+  depends_on:
+  - scope
+  estimate_hours: 1
+  acceptance:
+  - A recipient list records a reason for fit and a usable contact route for each
+    target.
+- key: draft
+  title: Prepare personalised messages for {goal}
+  depends_on:
+  - targets
+  estimate_hours: 1
+  acceptance:
+  - Each message states the offer and one clear call to action.
+- key: send
+  title: Send approved outreach for {goal}
+  depends_on:
+  - draft
+  estimate_hours: 0.5
+  acceptance:
+  - Approved messages are sent and each send is recorded.
+- key: followup
+  title: Review responses and follow up for {goal}
+  depends_on:
+  - send
+  estimate_hours: 0.5
+  acceptance:
+  - Responses and next actions are recorded, with dates for any follow-ups.

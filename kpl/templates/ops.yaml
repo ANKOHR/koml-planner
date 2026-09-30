@@ -1,0 +1,38 @@
+name: ops
+keywords:
+- ops
+- operations
+- organise
+- organize
+- maintain
+- backup
+- schedule
+priority: 5
+packages:
+- key: scope
+  title: Define the operating procedure for {goal}
+  depends_on: []
+  estimate_hours: 0.5
+  acceptance:
+  - Inputs, owner, frequency and success checks are recorded.
+- key: prepare
+  title: Prepare resources for {goal}
+  depends_on:
+  - scope
+  estimate_hours: 0.5
+  acceptance:
+  - Required access, resources and a recovery approach are confirmed.
+- key: execute
+  title: Run the procedure for {goal}
+  depends_on:
+  - prepare
+  estimate_hours: 1
+  acceptance:
+  - The procedure is completed and its outcome is logged.
+- key: review
+  title: Review and schedule the next run for {goal}
+  depends_on:
+  - execute
+  estimate_hours: 0.5
+  acceptance:
+  - Success checks are reviewed and a next run or corrective action is recorded.

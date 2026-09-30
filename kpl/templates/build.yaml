@@ -1,0 +1,44 @@
+name: build
+keywords:
+- build
+- ship
+- implement
+- code
+- prototype
+- develop
+priority: 2
+packages:
+- key: scope
+  title: Define scope and done conditions for {goal}
+  depends_on: []
+  estimate_hours: 0.5
+  acceptance:
+  - Scope, exclusions and observable success checks are written down.
+- key: design
+  title: Choose an implementation approach for {goal}
+  depends_on:
+  - scope
+  estimate_hours: 1
+  acceptance:
+  - A short design identifies components, inputs and outputs.
+- key: implement
+  title: Implement the scoped version of {goal}
+  depends_on:
+  - design
+  estimate_hours: 3
+  acceptance:
+  - The scoped behavior runs on a representative input.
+- key: verify
+  title: Verify the implementation of {goal}
+  depends_on:
+  - implement
+  estimate_hours: 1
+  acceptance:
+  - The recorded success checks pass and known limitations are listed.
+- key: deliver
+  title: Package the verified result of {goal}
+  depends_on:
+  - verify
+  estimate_hours: 0.5
+  acceptance:
+  - Usage instructions and the deliverable are available to the intended user.

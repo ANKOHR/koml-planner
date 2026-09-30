@@ -1,0 +1,31 @@
+name: generic
+keywords: []
+priority: 6
+packages:
+- key: clarify
+  title: Clarify the outcome of {goal}
+  depends_on: []
+  estimate_hours: 0.5
+  acceptance:
+  - An observable outcome, scope and constraints are written down.
+- key: prepare
+  title: Identify the first concrete action for {goal}
+  depends_on:
+  - clarify
+  estimate_hours: 0.5
+  acceptance:
+  - A feasible action names its inputs, owner and done condition.
+- key: act
+  title: Complete the first scoped action for {goal}
+  depends_on:
+  - prepare
+  estimate_hours: 1
+  acceptance:
+  - The agreed action is completed and evidence is recorded.
+- key: review
+  title: Review progress on {goal}
+  depends_on:
+  - act
+  estimate_hours: 0.5
+  acceptance:
+  - The outcome is checked and the next action or stopping decision is recorded.

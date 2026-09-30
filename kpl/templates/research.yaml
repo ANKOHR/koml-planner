@@ -1,0 +1,35 @@
+name: research
+keywords:
+- research
+- investigate
+- compare
+- study
+priority: 3
+packages:
+- key: question
+  title: Define research questions for {goal}
+  depends_on: []
+  estimate_hours: 0.5
+  acceptance:
+  - Questions, scope and decision criteria are recorded.
+- key: sources
+  title: Gather evidence for {goal}
+  depends_on:
+  - question
+  estimate_hours: 2
+  acceptance:
+  - Relevant sources are recorded with provenance and dates.
+- key: analyse
+  title: Compare evidence for {goal}
+  depends_on:
+  - sources
+  estimate_hours: 1
+  acceptance:
+  - Findings distinguish supporting evidence, uncertainty and contradictions.
+- key: report
+  title: Record conclusions for {goal}
+  depends_on:
+  - analyse
+  estimate_hours: 1
+  acceptance:
+  - A written conclusion answers each question and identifies remaining gaps.
