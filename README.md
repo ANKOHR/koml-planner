@@ -2,45 +2,44 @@
 
 Say the goal. Get the graph. Every step checkable, every dependency explicit, no black box.
 
-KOML Planner turns a goal sentence into a dependency graph of executable work packages using a deterministic, hand-written template library. It helps Henry turn an intention into a first checkable action before work starts. Python 3.10 or newer is required.
+KOML Planner turns a vague goal into an ordered dependency graph of executable work packages using hand-written YAML templates. It runs locally on CPU, without network calls, model calls, randomness or GPU dependencies.
 
 ## Quickstart
 
-With PyYAML, pytest and setuptools already installed, installation and use are entirely local:
+Python 3.10 or later, PyYAML and pytest are required. With those dependencies and setuptools already available, install without network access:
 
 ```powershell
-python -m pip install --no-index --no-deps --no-build-isolation -e .
+python -m pip install --no-index --no-build-isolation -e .
 python -m pytest -q
 kpl plan --goal "ship a scoped paid trial for a warm lead" --out plan.json
 kpl validate --plan plan.json
 kpl render --plan plan.json --format text
 kpl packages --plan plan.json --format md
+kpl render --plan plan.json --format json
 ```
 
-The module invocation `python -m kpl.cli` supports the same arguments if the console command is not on PATH. No command makes network calls. No model, GPU workload, RNG or GPU package is used.
+The equivalent source-tree command is `python -m kpl.cli`. CLI errors go to stderr and return exit code 1; successful commands return 0. Argument errors return 2. The planner validates its output before writing it.
 
-`plan` writes UTF-8 JSON with LF line endings and a final newline. Identical goal text and template library produce byte-identical files. Output contains no timestamps or random identifiers. `validate` prints zero errors on a clean plan and returns 0; invalid plans return 1 with named errors on stderr. `packages` lists only packages with an empty `depends_on` array, including their acceptance criteria. Dependencies refer to work that must be completed first. The schema has no completion state, so it cannot infer that a dependent package is ready after human work. Edit the plan or extend a downstream execution system to track completion.
+If a Windows user install warns that its Scripts directory is outside PATH, add the directory printed by pip to PATH, or use `python -m kpl.cli` immediately.
 
-`render --format text` prints an indented dependency tree with explicit dependency ids. Shared descendants appear under each parent; repeated nodes are marked `shown above` and their children are expanded once. `render --format json` emits the full plan. Reading commands validate before rendering or listing.
+## Template catalogue and matching
 
-## Template catalogue and priority
+| Priority | Template | Literal keywords |
+| --- | --- | --- |
+| 1 | outreach | outreach, contact, lead, pitch, email, prospects |
+| 2 | build | build, ship, implement, code, prototype, develop |
+| 3 | research | research, investigate, compare, study |
+| 4 | writing | write, draft, edit, article, essay, publish |
+| 5 | ops | ops, operations, organise, organize, maintain, backup, schedule |
+| 6 | generic | fallback, no keywords |
 
-The first matching template in this fixed priority order wins, even when several task types match. Keywords are literal, case-insensitive matches with whole-word boundaries, not unrestricted substrings within words. This follows the whole-word CLI specification: `build` matches `BUILD` but does not match `rebuild`. Punctuation forms a boundary; letters, digits and underscores do not. Literal keywords are escaped before matching, with no user-controlled regex.
+Matching uses case-insensitive literal substring rules bounded by whole-word checks: a keyword cannot have a Unicode word character (letter, number or underscore) immediately before or after it. `BUILD` matches; `rebuild` does not. Keywords are escaped before regex matching. The first template by ascending priority with any hit wins, regardless of keyword position or number of hits. `research build outreach` selects outreach. No hits selects generic and always produces a nonempty plan.
 
-| Priority | Template | Keywords | Work packages |
-| --- | --- | --- | --- |
-| 1 | outreach | outreach, contact, lead, pitch, email, prospects | Offer, recipients, messages, send, follow up |
-| 2 | build | build, ship, implement, code, prototype, develop | Scope, design, implement, verify, deliver |
-| 3 | research | research, investigate, compare, study | Questions, sources, analysis, conclusions |
-| 4 | writing | write, draft, edit, article, essay, publish | Brief, outline, draft, revision |
-| 5 | ops | ops, operations, organise, organize, maintain, backup, schedule | Procedure, resources, execution, review |
-| 6 | generic | none; fallback on zero hits | Clarify outcome, identify action, act, review |
+Outreach covers offer, recipients, messages, sending and follow-up. Build covers scope, design, implementation, verification and delivery. Research covers questions, sources, analysis and conclusions. Writing covers brief, outline, draft and revision. Ops covers procedure, preparation, execution and review. Generic covers clarification, preparation, first action and review.
 
-For example, `research build outreach` selects outreach exactly once. The demo selects outreach because `lead` outranks the build keyword `ship`. Each YAML file declares `name`, `keywords`, `priority`, and `packages`. Package skeletons declare `key`, `title`, `depends_on` keys, `estimate_hours`, and `acceptance`. Only `{goal}` interpolation is supported. Expansion orders acyclic skeletons topologically, preserving source order for ties, then assigns `p1`, `p2`, and so on. A template cycle is retained long enough for validation to name it; the CLI refuses to write an invalid plan.
+Each YAML file declares `name`, `keywords`, `priority` and `packages`. Skeletons declare a unique `key`, a `title` pattern, dependency keys, a default `estimate_hours` and acceptance patterns. `{goal}` expands literally to the supplied goal. Stable topological ordering assigns `p1`, `p2` and subsequent ids, then resolves dependency keys to those ids. Invalid files produce `TemplateLoadError` naming the file at CLI startup. Names and priorities must be unique, and exactly one generic template is required. Cyclic skeletons are preserved for graph validation to report `CycleError`.
 
 ## Plan JSON schema
-
-The structural contract is enforced by `kpl/schema.py`:
 
 ```json
 {
@@ -59,61 +58,46 @@ The structural contract is enforced by `kpl/schema.py`:
 }
 ```
 
-Top-level goal and template_used must be nonempty strings; packages must be a nonempty array. Each package requires nonempty string id, title and task_type, string arrays depends_on and acceptance, and a finite numeric estimate_hours. Booleans are not numbers in this contract. Additional fields are tolerated for downstream tools. The example illustrates the schema; generated generic plans contain all four catalogue packages.
+`schema.py` enforces this structural contract. Top-level goal and template name are nonempty strings; packages is a nonempty array. Each package has nonempty id, title and task_type strings, string arrays for dependencies and acceptance, and a finite numeric estimate. Booleans are not estimates. Extra fields are permitted for downstream consumers such as koml-critic. JSON output is UTF-8, indented with two spaces and ends with a newline. Identical goal text with the same template library produces byte-identical output, without timestamps.
 
-## Validation rules
+## Validation and rendering
 
-| Named error | Condition |
-| --- | --- |
-| SchemaError | Invalid JSON or missing/incorrectly typed plan fields |
-| DuplicateIdError | Two packages share an id |
-| DanglingDepError | A dependency does not resolve to a package id |
-| MissingAcceptanceError | A package has an empty acceptance array |
-| NegativeEstimateError | An estimate is below zero |
-| CycleError | A dependency cycle, including a self-dependency; lists ids in cycle order |
-| TemplateLoadError | Malformed or invalid YAML library at startup, naming the file; library-wide errors name the directory |
-| FileError | Input or output file cannot be accessed |
+`validate` checks structure and reports named errors without a traceback:
 
-Blank acceptance entries are schema errors. A cycle plus a dangling dependency reports both named errors. Cycle detection uses an iterative depth-first traversal to avoid Python recursion limits. All subcommands load the template library at startup; malformed templates fail with a named error instead of a traceback.
+- `SchemaError`: invalid JSON or invalid plan structure.
+- `DuplicateIdError`: repeated package id.
+- `DanglingDepError`: dependency references an absent id, naming both ids.
+- `MissingAcceptanceError`: empty acceptance list.
+- `NegativeEstimateError`: estimate below zero.
+- `CycleError`: directed cycle, listing ids including the repeated start id.
+
+Graph checks collect errors, so a planted cycle and dangling dependency are reported together. Cycle detection is iterative to handle large hand-edited graphs. `FileError` covers unreadable files or failed output writes.
+
+`packages` lists ready-to-start packages and their acceptance criteria as text or Markdown checkboxes. The schema has no completion state, so only packages with no dependencies are ready; merely having a dependency id present does not mean that work is complete. To advance readiness, a human must update the plan. `render --format text` shows an indented tree from roots to dependent work, labels every dependency and marks repeated nodes in shared branches. JSON rendering preserves the plan data. All commands validate a loaded plan before rendering it.
 
 ## Architecture
 
 ```text
-goal sentence
-    |
-    v
-templates/*.yaml -> templates.py (load and check library)
-    |                      |
-    +----------------------v
-                 parse.py (priority keyword selection)
-                           |
-                           v
-                 plan.py (expand and order skeletons)
-                           |
-                           v
-                 schema.py -> validate.py (check DAG)
-                           |
-                           v
-               cli.py -> plan.json -> render.py
-                                      |      |
-                                      v      v
-                                ready list  tree / JSON
-
-fixtures.py (20 synthetic goals) -> tests/ (unit and CLI checks)
+goal -> parse.py keyword scan -> templates.py + templates/*.yaml
+                                  |
+                                  v
+                              plan.py expansion
+                                  |
+                                  v
+plan JSON -> schema.py -> validate.py -> render.py tree / packages / JSON
+                 ^            ^
+                 +-- cli.py --+
+fixtures.py synthetic goals -> pytest component and CLI tests
 ```
 
 ## HONESTY BOUNDARY
 
-This planner is a scripted template matcher, explicitly not a language model and not an AI planner. Templates are hand-written. Keyword rules and their priority are documented above. Estimates are template defaults, not predictions of actual duration. Plans are starting scaffolds for a human to edit, not optimal decompositions. Every plan records `template_used`. Acceptance criteria are concrete template checks that still need human review for the specific goal. No claim is made that a language model generated these plans.
+This is a scripted template matcher, explicitly not a language model and not an AI planner. Templates are hand-written; matching uses literal keyword substring rules with whole-word boundaries in the documented priority order. Estimates are template defaults, not predictions of actual duration. Plans are starting scaffolds for a human to edit, not optimal decompositions. Every plan records `template_used`. No language model produces these plans. Acceptance criteria describe intended work; the planner does not execute that work or verify real-world completion.
 
 ## Evidence and improvement hook
 
-`kpl/fixtures.py` contains 20 labelled synthetic goals, not Henry's real past goals. The pytest suite checks all 20 expected labels, valid emitted graphs, nonempty acceptance, and identical output bytes across repeated planning. The required fixture threshold is 18/20; the library matches 20/20. Adversarial coverage includes three-template keyword stuffing, zero hits, a YAML self-dependency, a 10,000-character goal under one second, duplicate ids, a planted cycle plus a dangling dependency, and malformed inputs. CLI subprocess tests exercise every subcommand and rendering format.
+The 20 labelled goals in `kpl/fixtures.py` are synthetic. Tests require 20/20 expected template selections, acceptance criteria on every emitted package, zero validation errors and deterministic output on every fixture. This exceeds the brief's 18/20 threshold but is evidence about the synthetic fixture only. The suite also covers keyword stuffing, generic fallback, YAML self-dependency, duplicate ids, a combined cycle and dangling reference, and a 10,000-character goal completing in under one second. This does not measure Henry's time to first action or real goal coverage.
 
-The under-five-minute first-action hypothesis has not been measured on real users. Real trials are not shipped and no real-goal hit rate is claimed. After Henry runs 30 of his own past goals from his notes, record the count matched by keywords versus generic fallback and the resulting hit rate. Group fallback goals by observed pattern; add one template for the most common cluster, then re-run the same 30 goals. Keep it only if the measured hit rate improves. Record the sample date, matched counts before and after, percentage-point margin, observed cluster, new keywords and priority, and retain/remove decision here, without shipping private goal text. No measurement or improvement is fabricated in this build.
+The real-goal trial has not been run. After Henry supplies 30 past goals from his own notes, record keyword matches versus generic fallback and calculate `matched / 30`. Group fallback goals, write one template for the most common observed cluster, and remeasure the same goals. Record before and after counts and percentage-point margin here; retain the template only if the measured margin is positive. Trial results are recorded separately and not shipped as fixture data. No real trial results are claimed by this build.
 
-Verdict remains pending that trial: expand if real-goal hit rate clears 80%; integrate with koml-critic regardless so this fixed plan format can feed plan-then-attack; commercialise only as part of a larger ops offer; kill if Henry never runs it on real goals. Integration is a future consumer workflow, not an external call made by this CLI.
-
-Deterministic scaffolds make pre-work reviewable, diffable and testable. KOML should prefer rule-based decomposition where templates cover the domain, and record the producing template for downstream critics and verifiers.
-
-This repository is built and verified locally. Publication is handled separately.
+After that measurement, expand the library if hit rate clears 80%; integrate with koml-critic regardless through this fixed plan format; commercialise only within a larger ops offer; kill if Henry never uses it on real goals. These are future decisions, not completed integrations. Deterministic scaffolds keep plans reviewable, diffable and testable, and template provenance gives a downstream critic a clear starting point.

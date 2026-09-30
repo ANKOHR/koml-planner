@@ -41,3 +41,23 @@ def test_duplicate_priorities_rejected(tmp_path):
         (tmp_path / (t['name']+'.yaml')).write_text(yaml.safe_dump(t))
     with pytest.raises(TemplateLoadError, match='duplicate'):
         load_templates(tmp_path)
+
+
+def test_malformed_template_under_optimized_python(tmp_path):
+    import subprocess
+    import sys
+    (tmp_path / 'broken.yaml').write_text('[]')
+    result = subprocess.run(
+        [sys.executable, '-O', '-c',
+         'import sys; from kpl.templates import load_templates; load_templates(sys.argv[1])',
+         str(tmp_path)], capture_output=True, text=True, timeout=10)
+    assert result.returncode != 0
+    assert 'TemplateLoadError: broken.yaml: expected a mapping' in result.stderr
+
+
+def test_invalid_pattern_names_file(tmp_path):
+    template = load_templates()[0]
+    template['packages'][0]['title'] = '{goal.missing}'
+    (tmp_path / 'broken.yaml').write_text(yaml.safe_dump(template))
+    with pytest.raises(TemplateLoadError, match='broken.yaml'):
+        load_templates(tmp_path)
