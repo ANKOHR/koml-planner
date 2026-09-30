@@ -1,0 +1,4 @@
+Pytest test count: 89 passed
+Local verified build commit: 61d95820ab6fa8e0b6071009734345012287466f
+
+Built KOML Planner as a local, deterministic Python CLI with plan, validate, packages and render commands, six hand-written YAML templates, whole-word keyword matching in documented priority order, stable dependency expansion, named schema and graph validation errors, acceptance criteria, template default estimates, and text and JSON rendering. The complete pytest suite passed, all 20 labelled synthetic fixture goals selected their expected templates, and the installed CLI demo produced a valid dependency tree in 0.60 seconds. README documents the schema, architecture, honesty boundary and unmeasured real-goal improvement hook. No network calls, language models, GPU workloads or publishing were used. The hash above identifies the tested implementation before this completion-marker commit.
